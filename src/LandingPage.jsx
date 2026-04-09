@@ -85,7 +85,7 @@ export default function LandingPage({ onEnter }) {
           <section className="client-logos-section">
             <p className="client-label">TRUSTED BY ENGINEERS & DESIGNERS AT</p>
             <div className="logos-grid">
-              {/* Iconic Brand Symbols - 100% Accuracy               {/* Official Brand Wordmarks - Monochrome White */}
+              {/* Official Brand Wordmarks - Monochrome White */}
               <div className="logo-item" title="Google">
                 <svg width="100" height="24" viewBox="0 0 533.5 183.5" fill="#ffffff">
                   <path d="M110.1 79.5V110h43c-1.8 11.6-11.4 34-43 34-27.6 0-50.1-22.9-50.1-51.1S82.5 41.8 110.1 41.8c15.7 0 26.2 6.7 32.2 12.5l24.3-23.4c-15.6-14.7-35.9-23.5-56.5-23.5C49.3 7.4 0 56.7 0 117.4s49.3 110 110.1 110c63.5 0 105.7-44.6 105.7-107.5 0-7.2-.8-12.7-1.7-18.1H110.1z"/>
@@ -109,7 +109,7 @@ export default function LandingPage({ onEnter }) {
                   <path d="M16.5 6.5c-1.8 0-3.3.9-4.5 2.1-1.2-1.2-2.7-2.1-4.5-2.1-3.3 0-6 2.7-6 6s2.7 6 6 6c1.8 0 3.3-.9 4.5-2.1 1.2 1.2 2.7 2.1 4.5 2.1 3.3 0 6-2.7 6-6s-2.7-6-6-6zm0 10c-1.4 0-2.6-.9-3.5-2.1 1.1-1.5 1.1-3.9 0-5.4.9-1.2 2.1-2.1 3.5-2.1 2.2 0 4 1.8 4 4s-1.8 4-4 4zm-9 0c-2.2 0-4-1.8-4-4s1.8-4 4-4c1.4 0 2.6.9 3.5 2.1-1.1 1.5-1.1 3.9 0 5.4-.9 1.2-2.1 2.1-3.5 2.1z" transform="scale(0.8) translate(0, 4)" />
                   <text x="35" y="18" style={{fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: '1.2rem', letterSpacing: '-0.5px'}} fill="#ffffff">Meta</text>
                 </svg>
-              </div>div>
+              </div>
             </div>
           </section>
 

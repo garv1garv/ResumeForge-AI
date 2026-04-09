@@ -116,25 +116,49 @@ export async function generateTailoredResume(pdfBase64, jobDescription, githubPr
 
   const prompt = PROMPT_TEMPLATE(jobDescription, githubProjects);
 
-  const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
-    contents: [
-      {
-        role: "user",
-        parts: [
+  let response;
+  let retries = 3;
+  let delayMs = 2000;
+  
+  while (retries > 0) {
+    try {
+      response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: [
           {
-            inlineData: {
-              mimeType: "application/pdf",
-              data: pdfBase64,
-            },
-          },
-          {
-            text: prompt,
+            role: "user",
+            parts: [
+              {
+                inlineData: {
+                  mimeType: "application/pdf",
+                  data: pdfBase64,
+                },
+              },
+              {
+                text: prompt,
+              },
+            ],
           },
         ],
-      },
-    ],
-  });
+      });
+      break; // Successful request
+    } catch (error) {
+      const errMsg = error.message || JSON.stringify(error) || "";
+      const isOverloaded = errMsg.includes("503") || errMsg.includes("UNAVAILABLE") || errMsg.includes("high demand") || error.status === 503 || error.status === 'UNAVAILABLE';
+      
+      if (isOverloaded && retries > 1) {
+        retries--;
+        console.warn(`Gemini API overloaded [503]. Retrying in ${delayMs / 1000}s...`);
+        await new Promise(r => setTimeout(r, delayMs));
+        delayMs *= 1.5; // Exponential backoff
+      } else {
+        if (isOverloaded) {
+          throw new Error("Gemini AI is currently experiencing high demand. Please wait a few seconds and try again.");
+        }
+        throw new Error("Error communicating with Gemini AI: " + errMsg);
+      }
+    }
+  }
 
   const text = response.text.trim();
 
@@ -170,10 +194,31 @@ ${jobDescription}
 
 Return ONLY the enhanced content as valid JSON (same structure as input), no markdown fences, no extra text. Make it more impactful with stronger action verbs and metrics.`;
 
-  const response = await ai.models.generateContent({
-    model: "gemini-2.5-flash",
-    contents: prompt,
-  });
+  let response;
+  let retries = 3;
+  let delayMs = 2000;
+  
+  while (retries > 0) {
+    try {
+      response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: prompt,
+      });
+      break;
+    } catch (error) {
+      const errMsg = error.message || JSON.stringify(error) || "";
+      const isOverloaded = errMsg.includes("503") || errMsg.includes("UNAVAILABLE") || errMsg.includes("high demand") || error.status === 503 || error.status === 'UNAVAILABLE';
+      
+      if (isOverloaded && retries > 1) {
+        retries--;
+        await new Promise(r => setTimeout(r, delayMs));
+        delayMs *= 1.5;
+      } else {
+        if (isOverloaded) throw new Error("Gemini AI is currently experiencing high demand. Please try again.");
+        throw new Error("Error communicating with Gemini AI: " + errMsg);
+      }
+    }
+  }
 
   let cleanText = response.text.trim();
   if (cleanText.startsWith("```json")) cleanText = cleanText.slice(7);

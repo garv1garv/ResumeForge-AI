@@ -22,6 +22,8 @@ const Icons = {
   Key: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.3 9.3"/><path d="m22 3-1.5-1.5"/></svg>,
   Wand: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 4V2"/><path d="M15 16v-2"/><path d="M8 9h2"/><path d="M20 9h2"/><path d="M17.8 11.8 19 13"/><path d="M15 9h0"/><path d="M17.8 6.2 19 5"/><path d="m3 21 9-9"/><path d="M12.2 6.2 11 5"/></svg>,
   Upload: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>,
+  Sun: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>,
+  Moon: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>,
 };
 
 // ===== DEFAULT RESUME DATA =====
@@ -212,6 +214,8 @@ function ResumePreview({ data }) {
 // ===== MAIN APP =====
 function App() {
   const [data, setData] = useState(DEFAULT_DATA);
+  const [atsData, setAtsData] = useState(null);
+  const [theme, setTheme] = useState('dark');
   const [apiKey, setApiKey] = useState('');
   const [githubUsername, setGithubUsername] = useState('');
   const [githubRepos, setGithubRepos] = useState([]);
@@ -222,6 +226,11 @@ function App() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [showSetup, setShowSetup] = useState(true);
   const { toasts, add: addToast } = useToast();
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
+
 
   // Update nested data
   const updateContact = (field, value) => {
@@ -449,6 +458,12 @@ function App() {
         githubRepos.length > 0 ? githubRepos : []
       );
 
+      if (result.atsScore) {
+        setAtsData(result.atsScore);
+        // Remove atsScore from the data so it doesn't break the PDF structure if unexpected
+        delete result.atsScore;
+      }
+
       setData(result);
       addToast('Tailored resume generated! Review and edit below.', 'success');
     } catch (err) {
@@ -486,6 +501,9 @@ function App() {
           </div>
         </div>
         <div className="header-actions">
+          <button className="btn btn-ghost btn-icon" onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')} title="Toggle Theme">
+            {theme === 'dark' ? <Icons.Sun /> : <Icons.Moon />}
+          </button>
           <button className="btn btn-secondary" onClick={() => setShowSetup(!showSetup)}>
             <Icons.Key /> {showSetup ? 'Hide Setup' : 'Setup'}
           </button>
@@ -600,6 +618,52 @@ function App() {
           </div>
         </div>
       </div>
+
+      {/* ATS Score Panel */}
+      {atsData && (
+        <div className="ats-panel animate-slide-up">
+          <div className="ats-panel-inner">
+            <div className="ats-header">
+              <h3><Icons.Sparkles /> ATS Match Analysis</h3>
+              <p>Based on your selected Job Description</p>
+            </div>
+            <div className="ats-grid">
+              <div className="ats-score-card">
+                <div className="ats-score-circle">
+                  <svg viewBox="0 0 36 36" className="circular-chart">
+                    <path className="circle-bg"
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                    />
+                    <path className="circle"
+                      strokeDasharray={`${atsData.newScore}, 100`}
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                    />
+                    <text x="18" y="20.35" className="percentage">{atsData.newScore}%</text>
+                  </svg>
+                </div>
+                <div className="ats-score-stats">
+                  <div>Previous Score: <strong>{atsData.originalScore}%</strong></div>
+                  <div className="ats-score-diff">+{atsData.newScore - atsData.originalScore}% Boost</div>
+                </div>
+              </div>
+              <div className="ats-details">
+                <div className="ats-keywords">
+                  <label>Matched Keywords</label>
+                  <div className="keyword-tags">
+                    {atsData.matchedKeywords?.map((kw, i) => <span key={i} className="keyword-tag">{kw}</span>)}
+                  </div>
+                </div>
+                <div className="ats-improvements">
+                  <label>Key Improvements</label>
+                  <ul className="ats-improvements-list">
+                    {atsData.improvements?.map((imp, i) => <li key={i}>{imp}</li>)}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Workspace: Editor + Preview */}
       <div className="workspace">

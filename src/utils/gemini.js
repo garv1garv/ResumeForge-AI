@@ -24,6 +24,7 @@ YOUR TASK:
 - Make bullet points more impactful with strong action verbs and metrics where possible
 - If GitHub projects are provided, include the most relevant ones tailored to the job
 - Extract ALL links from the PDF (LinkedIn, GitHub, portfolio, project links, etc.) and preserve them
+- Calculate and include an estimated ATS score (0-100) before and after your improvements, and detail exactly what keywords or enhancements were added.
 
 Generate a JSON object with this EXACT structure:
 {
@@ -83,7 +84,16 @@ Generate a JSON object with this EXACT structure:
       "date": "Real Date",
       "link": "Real credential link or empty string"
     }
-  ]
+  ],
+  "atsScore": {
+    "originalScore": 65,
+    "newScore": 92,
+    "improvements": [
+      "Added metrics to the experience section to highlight impact",
+      "Prioritized Python and React in the skills section"
+    ],
+    "matchedKeywords": ["React", "Python", "Agile", "TypeScript"]
+  }
 }
 
 CRITICAL RULES:

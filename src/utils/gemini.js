@@ -21,7 +21,7 @@ YOUR TASK:
 - REWRITE the summary, bullet points, and skill descriptions to perfectly match the new job description
 - Add any skills from the job description that the user likely has based on their background
 - Reorder sections and skills to prioritize what the job description asks for
-- Make bullet points more impactful with strong action verbs and metrics where possible
+- CRITICAL: QUANTIFY achievements with specific metrics, percentages, numbers, and scale wherever possible. Make bullet points highly impactful and data-driven.
 - If GitHub projects are provided, include the most relevant ones tailored to the job
 - Extract ALL links from the PDF (LinkedIn, GitHub, portfolio, project links, etc.) and preserve them
 - Calculate and include an estimated ATS score (0-100) before and after your improvements, and detail exactly what keywords or enhancements were added.

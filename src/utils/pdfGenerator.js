@@ -96,9 +96,10 @@ export function generateResumePDF(data) {
 
   // Links line
   const linkParts = [];
-  if (data.contact?.linkedin) linkParts.push({ text: "LinkedIn", url: data.contact.linkedin });
-  if (data.contact?.github) linkParts.push({ text: "GitHub", url: data.contact.github });
-  if (data.contact?.portfolio) linkParts.push({ text: "Portfolio", url: data.contact.portfolio });
+  const formatUrl = (url) => url.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '');
+  if (data.contact?.linkedin) linkParts.push({ text: formatUrl(data.contact.linkedin), url: data.contact.linkedin });
+  if (data.contact?.github) linkParts.push({ text: formatUrl(data.contact.github), url: data.contact.github });
+  if (data.contact?.portfolio) linkParts.push({ text: formatUrl(data.contact.portfolio), url: data.contact.portfolio });
 
   if (linkParts.length > 0) {
     doc.setFontSize(9);
@@ -253,10 +254,10 @@ export function generateResumePDF(data) {
       doc.setFontSize(10);
       doc.setTextColor(...COLORS.dark);
 
+      doc.text(proj.name || "Project", MARGIN.left, y);
       if (proj.link) {
-        addLink(proj.name || "Project", MARGIN.left, y, proj.link, 10);
-      } else {
-        doc.text(proj.name || "Project", MARGIN.left, y);
+        const titleWidth = doc.getTextWidth((proj.name || "Project") + "  ");
+        addLink(proj.link.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, ''), MARGIN.left + titleWidth, y, proj.link, 9);
       }
 
       // Technologies on right
@@ -358,10 +359,10 @@ export function generateResumePDF(data) {
       doc.setFontSize(9);
       doc.setTextColor(...COLORS.dark);
 
+      doc.text(cert.name || "", MARGIN.left, y);
       if (cert.link) {
-        addLink(cert.name || "", MARGIN.left, y, cert.link, 9);
-      } else {
-        doc.text(cert.name || "", MARGIN.left, y);
+        const nameWidth = doc.getTextWidth((cert.name || "") + "  ");
+        addLink(cert.link.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, ''), MARGIN.left + nameWidth, y, cert.link, 8);
       }
 
       doc.setFont("helvetica", "normal");

@@ -137,9 +137,21 @@
   font-weight: 600;
   font-size: 13px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   justify-content: center;
   letter-spacing: 1px;
+}
+
+.add-btn:hover {
+  background: rgba(14, 165, 233, 0.15);
+  border-style: solid;
+  border-color: rgba(14, 165, 233, 0.6);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.15);
+}
+
+.add-btn:active {
+  transform: scale(0.98);
 }
 
 /* ===== HUD ELEMENTS ===== */

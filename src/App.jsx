@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import './App.css';
-import { initGemini, generateTailoredResume } from './utils/gemini';
+import { initGemini, generateTailoredResume, enhanceSection } from './utils/gemini';
 import { fetchGitHubRepos } from './utils/github';
 import { downloadPDF } from './utils/pdfGenerator';
 import LandingPage from './LandingPage';
@@ -105,9 +105,9 @@ function ResumePreview({ data }) {
         </div>
 
         <div className="resume-contact-line">
-          {data.contact?.linkedin && <><a href={data.contact.linkedin} target="_blank" rel="noreferrer">LinkedIn</a><span className="sep">|</span></>}
-          {data.contact?.github && <><a href={data.contact.github} target="_blank" rel="noreferrer">GitHub</a><span className="sep">|</span></>}
-          {data.contact?.portfolio && <a href={data.contact.portfolio} target="_blank" rel="noreferrer">Portfolio</a>}
+          {data.contact?.linkedin && <><a href={data.contact.linkedin} target="_blank" rel="noreferrer">{data.contact.linkedin.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')}</a><span className="sep">|</span></>}
+          {data.contact?.github && <><a href={data.contact.github} target="_blank" rel="noreferrer">{data.contact.github.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')}</a><span className="sep">|</span></>}
+          {data.contact?.portfolio && <a href={data.contact.portfolio} target="_blank" rel="noreferrer">{data.contact.portfolio.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')}</a>}
         </div>
 
         <hr className="resume-divider" />
@@ -160,8 +160,13 @@ function ResumePreview({ data }) {
               <div key={i} className="resume-entry">
                 <div className="resume-entry-header">
                   <span className="resume-entry-title">
-                    {proj.link ? <a className="resume-project-link" href={proj.link} target="_blank" rel="noreferrer">{proj.name}</a> : proj.name}
+                    {proj.name}
                   </span>
+                  {proj.link && (
+                    <span style={{ fontSize: '8.5pt', marginLeft: '8px' }}>
+                      <a className="resume-project-link" href={proj.link} target="_blank" rel="noreferrer">{proj.link.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')}</a>
+                    </span>
+                  )}
                   {proj.technologies?.length > 0 && <span className="resume-project-tech">{proj.technologies.join(' • ')}</span>}
                 </div>
                 {proj.description && <p style={{ fontSize: '9pt', color: '#334155', marginBottom: 3 }}>{proj.description}</p>}
@@ -203,8 +208,13 @@ function ResumePreview({ data }) {
               <div key={i} className="resume-entry">
                 <div className="resume-entry-header">
                   <span className="resume-entry-title">
-                    {cert.link ? <a className="resume-cert-link" href={cert.link} target="_blank" rel="noreferrer">{cert.name}</a> : cert.name}
+                    {cert.name}
                   </span>
+                  {cert.link && (
+                    <span style={{ fontSize: '8.5pt', marginLeft: '8px' }}>
+                      <a className="resume-cert-link" href={cert.link} target="_blank" rel="noreferrer">{cert.link.replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')}</a>
+                    </span>
+                  )}
                   <span className="resume-entry-date">{[cert.issuer, cert.date].filter(Boolean).join(' • ')}</span>
                 </div>
               </div>
@@ -476,6 +486,34 @@ function App() {
       addToast(err.message, 'error');
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  // AI Enhance Single Item
+  const handleEnhanceItem = async (type, index) => {
+    if (!apiKey.trim()) {
+      addToast('Please enter your Gemini API key first.', 'error');
+      return;
+    }
+    if (!jobDescription.trim()) {
+      addToast('Please paste the job description first to tailor against.', 'error');
+      return;
+    }
+
+    addToast(`Enhancing ${type.slice(0, -1)} with AI...`, 'info');
+    try {
+      initGemini(apiKey.trim());
+      const currentContent = data[type][index];
+      const enhancedContent = await enhanceSection(type, currentContent, jobDescription);
+      
+      setData(prev => {
+        const newData = { ...prev };
+        newData[type] = newData[type].map((item, i) => i === index ? enhancedContent : item);
+        return newData;
+      });
+      addToast(`${type.slice(0, -1)} enhanced successfully!`, 'success');
+    } catch (err) {
+      addToast(err.message, 'error');
     }
   };
 
@@ -833,6 +871,9 @@ function App() {
                     <div className="list-item-subtitle">{exp.company || 'Company'}</div>
                   </div>
                   <div className="list-item-actions">
+                    <button className="btn btn-ghost btn-icon" onClick={() => handleEnhanceItem('experience', i)} title="AI Enhance (Magic Wand)">
+                      <Icons.Wand />
+                    </button>
                     <button className="btn btn-ghost btn-icon" onClick={() => removeExperience(i)} title="Remove">
                       <Icons.Trash />
                     </button>
@@ -891,6 +932,9 @@ function App() {
                     <div className="list-item-subtitle">{proj.technologies?.join(', ') || 'Technologies'}</div>
                   </div>
                   <div className="list-item-actions">
+                    <button className="btn btn-ghost btn-icon" onClick={() => handleEnhanceItem('projects', i)} title="AI Enhance (Magic Wand)">
+                      <Icons.Wand />
+                    </button>
                     <button className="btn btn-ghost btn-icon" onClick={() => removeProject(i)} title="Remove">
                       <Icons.Trash />
                     </button>

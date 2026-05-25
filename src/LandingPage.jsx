@@ -1,36 +1,20 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import './LandingPage.css';
 
-function useItersectionObserver(options = {}) {
-  const [elements, setElements] = useState([]);
-  const [entries, setEntries] = useState([]);
-
-  const observer = useRef(
-    new IntersectionObserver((observedEntries) => {
-      setEntries(observedEntries);
-    }, options)
-  );
-
-  useEffect(() => {
-    const currentObserver = observer.current;
-    currentObserver.disconnect();
-    if (elements.length) {
-      elements.forEach(elem => currentObserver.observe(elem));
-    }
-    return () => currentObserver.disconnect();
-  }, [elements]);
-
-  return [setElements, entries];
-}
-
 export default function LandingPage({ onEnter }) {
-  const [scrollY, setScrollY] = useState(0);
+  const titleRef = useRef(null);
 
-  // Simple scroll trigger logic classes
+  // Scroll parallax via ref (no re-renders) + reveal observer
   useEffect(() => {
-    const handleScroll = () => requestAnimationFrame(() => setScrollY(window.scrollY));
+    const handleScroll = () => {
+      requestAnimationFrame(() => {
+        if (titleRef.current) {
+          titleRef.current.style.transform = `translateY(${window.scrollY * -0.2}px)`;
+        }
+      });
+    };
     window.addEventListener('scroll', handleScroll, { passive: true });
-    
+
     // Intersection observer for `.reveal` elements
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
@@ -71,7 +55,7 @@ export default function LandingPage({ onEnter }) {
           {/* Hero Section */}
           <section className="shader-hero reveal">
             <div className="hero-content">
-              <h1 className="hero-title" style={{ transform: `translateY(${scrollY * -0.2}px)` }}>
+              <h1 className="hero-title" ref={titleRef}>
                 An AI Resume Studio, <br />
                 <em>Plugged into the Future.</em>
               </h1>
@@ -81,34 +65,12 @@ export default function LandingPage({ onEnter }) {
             </div>
           </section>
 
-          {/* Trusted By Client Logos */}
+          {/* Social Proof — Honest Tagline */}
           <section className="client-logos-section">
-            <p className="client-label">TRUSTED BY ENGINEERS & DESIGNERS AT</p>
+            <p className="client-label">BUILT FOR ENGINEERS TARGETING TOP TECH COMPANIES</p>
             <div className="logos-grid">
-              {/* Official Brand Wordmarks - Monochrome White */}
-              <div className="logo-item" title="Google">
-                <svg width="100" height="24" viewBox="0 0 533.5 183.5" fill="#ffffff">
-                  <path d="M110.1 79.5V110h43c-1.8 11.6-11.4 34-43 34-27.6 0-50.1-22.9-50.1-51.1S82.5 41.8 110.1 41.8c15.7 0 26.2 6.7 32.2 12.5l24.3-23.4c-15.6-14.7-35.9-23.5-56.5-23.5C49.3 7.4 0 56.7 0 117.4s49.3 110 110.1 110c63.5 0 105.7-44.6 105.7-107.5 0-7.2-.8-12.7-1.7-18.1H110.1z"/>
-                  <path d="M331 117.4c0-26.6-21.7-50-51-50s-51 23.4-51 50 21.7 50 51 50 51-23.4 51-50zm-73.4 0c0-14.9 10.1-24.9 22.4-24.9s22.4 10 22.4 24.9-10.1 24.9-22.4 24.9c-12.3 0-22.4-10-22.4-24.9z"/>
-                  <path d="M439.4 117.4c0-26.6-21.7-50-51-50s-51 23.4-51 50 21.7 50 51 50 51-23.4 51-50zm-73.4 0c0-14.9 10.1-24.9 22.4-24.9s22.4 10 22.4 24.9-10.1 24.9-22.4 24.9c-12.3 0-22.4-10-22.4-24.9z"/>
-                </svg>
-              </div>
-              <div className="logo-item" title="Netflix">
-                <svg width="100" height="24" viewBox="0 0 111 30" fill="#ffffff">
-                  <path d="M10.5 0L0 0 0 30 5.2 30 5.2 15 10.5 15 10.5 30 15.7 30 15.7 0 10.5 0ZM25.8 0L19.5 0 19.5 30 30.6 30 30.6 25.4 24.7 25.4 24.7 17.5 30.1 17.5 30.1 12.9 24.7 12.9 24.7 4.6 30.6 4.6 30.6 0 25.8 0ZM45.6 4.6L40.2 4.6 40.2 30 35 30 35 4.6 29.7 4.6 29.7 0 45.6 0 45.6 4.6ZM55.5 0L50.4 0 50.4 30 55.6 30 55.6 17.4 61.2 17.4 61.2 12.8 55.6 12.8 55.6 4.6 61.5 4.6 61.5 0 55.5 0ZM70.4 0L65.3 0 65.3 30 76.4 30 76.4 25.4 70.4 25.4 70.4 0ZM85.5 0L80.3 0 80.3 30 85.5 30 85.5 0ZM106.3 0L100.2 10.1 94.1 0 88.6 0 97.4 14.6 88.3 30 93.8 30 100.2 19.1 106.6 30 111 30 102.7 14.6 111.9 0 106.3 0Z" />
-                </svg>
-              </div>
-              <div className="logo-item" title="NVIDIA">
-                <svg width="110" height="24" viewBox="0 0 120 28" fill="#ffffff">
-                  <path d="M12.2,2.3c-5.4,0-9.8,4.4-9.8,9.8s4.4,9.8,9.8,9.8c1.6,0,3.1-0.4,4.5-1.1l-1.3-1.3c-1,0.5-2.1,0.7-3.2,0.7c-4.4,0-8-3.6-8-8c0-4.4,3.6-8,8-8s8,3.6,8,8c0,1-0.2,2.1-0.7,3l1.3,1.3c0.7-1.3,1.1-2.8,1.1-4.4C22,6.7,17.6,2.3,12.2,2.3z M12.2,6.8c-2.9,0-5.3,2.4-5.3,5.3s2.4,5.3,5.3,5.3c0.7,0,1.4-0.1,2-0.4l-1.2-1.2c-0.3,0.1-0.5,0.1-0.8,0.1c-2,0-3.6-1.6-3.6-3.6s1.6-3.6,3.6-3.6c2,0,3.6,1.6,3.6,3.6c0,0.3-0.0,0.5-0.1,0.8l1.2,1.2c0.3-0.6,0.5-1.3,0.5-2C17.5,9.2,15.1,6.8,12.2,6.8z" />
-                  <text x="35" y="18" style={{fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '1rem', letterSpacing: '4px'}}>NVIDIA</text>
-                </svg>
-              </div>
-              <div className="logo-item" title="Meta">
-                <svg width="100" height="24" viewBox="0 0 110 24" fill="#ffffff">
-                  <path d="M16.5 6.5c-1.8 0-3.3.9-4.5 2.1-1.2-1.2-2.7-2.1-4.5-2.1-3.3 0-6 2.7-6 6s2.7 6 6 6c1.8 0 3.3-.9 4.5-2.1 1.2 1.2 2.7 2.1 4.5 2.1 3.3 0 6-2.7 6-6s-2.7-6-6-6zm0 10c-1.4 0-2.6-.9-3.5-2.1 1.1-1.5 1.1-3.9 0-5.4.9-1.2 2.1-2.1 3.5-2.1 2.2 0 4 1.8 4 4s-1.8 4-4 4zm-9 0c-2.2 0-4-1.8-4-4s1.8-4 4-4c1.4 0 2.6.9 3.5 2.1-1.1 1.5-1.1 3.9 0 5.4-.9 1.2-2.1 2.1-3.5 2.1z" transform="scale(0.8) translate(0, 4)" />
-                  <text x="35" y="18" style={{fontFamily: 'var(--font-sans)', fontWeight: 700, fontSize: '1.2rem', letterSpacing: '-0.5px'}} fill="#ffffff">Meta</text>
-                </svg>
+              <div className="proof-tagline">
+                AI-powered resume tailoring with real keyword analysis — no fabricated scores, no hallucinated skills.
               </div>
             </div>
           </section>
@@ -235,18 +197,16 @@ export default function LandingPage({ onEnter }) {
 
                <div className="footer-bottom">
                  <div className="footer-col">
-                   <span>Let's interface, call us today!</span>
-                   <a href="mailto:hello@resumeforge.ai">hello@resumeforge.ai</a>
+                   <span>Open Source Project</span>
+                   <a href="https://github.com/garv1garv/ResumeForge-AI" target="_blank" rel="noreferrer">View on GitHub</a>
                  </div>
                  <div className="footer-col">
-                   <a href="#" className="footer-link"><span className="link-dot"></span> LinkedIn</a>
-                   <a href="#" className="footer-link"><span className="link-dot"></span> Instagram</a>
-                   <a href="#" className="footer-link"><span className="link-dot"></span> X (Twitter)</a>
+                   <a href="https://github.com/garv1garv/ResumeForge-AI/issues" target="_blank" rel="noreferrer" className="footer-link"><span className="link-dot"></span> Report Issues</a>
+                   <a href="https://github.com/garv1garv/ResumeForge-AI/pulls" target="_blank" rel="noreferrer" className="footer-link"><span className="link-dot"></span> Contribute</a>
                  </div>
                  <div className="footer-col right">
-                   <span>Reach out today to our CEO</span>
-                   <a href="mailto:ceo@resumeforge.ai">ceo@resumeforge.ai</a>
-                   <a href="#" className="footer-link small mt-4">Accessibility Statement</a>
+                   <span>Built with Gemini AI</span>
+                   <a href="https://ai.google.dev/" target="_blank" rel="noreferrer">Google AI Studio</a>
                  </div>
                </div>
              </div>

@@ -29,6 +29,32 @@ export function generateResumePDF(data) {
     return false;
   }
 
+  // Predictive block height calculator — measures total height BEFORE rendering
+  function calculateBlockHeight(block, type = 'experience') {
+    let height = 0;
+    // Title line
+    height += 4.5;
+    // Subtitle line (company/location or tech)
+    height += 5;
+
+    if (type === 'project' && block.description) {
+      const descLines = doc.splitTextToSize(block.description, CONTENT_WIDTH);
+      height += descLines.length * 4;
+    }
+
+    // Bullet points
+    const highlights = block.highlights || [];
+    doc.setFontSize(9);
+    highlights.forEach((h) => {
+      const bulletLines = doc.splitTextToSize(h, CONTENT_WIDTH - 8);
+      height += bulletLines.length * 4;
+    });
+
+    // Bottom spacing
+    height += 4;
+    return height;
+  }
+
   function drawLine(yPos, color = COLORS.border) {
     doc.setDrawColor(...color);
     doc.setLineWidth(0.3);
@@ -105,7 +131,6 @@ export function generateResumePDF(data) {
     doc.setFontSize(9);
     const sep = "  |  ";
     const totalParts = linkParts.map(p => p.text).join(sep);
-    const totalW = doc.getTextWidth(totalParts) + (linkParts.length - 1) * doc.getTextWidth(sep) * 0.1;
     let lx = (PAGE_WIDTH - doc.getTextWidth(totalParts)) / 2;
 
     linkParts.forEach((part, i) => {
@@ -199,7 +224,9 @@ export function generateResumePDF(data) {
     sectionHeader("Professional Experience");
 
     data.experience.forEach((exp) => {
-      checkPageBreak(20);
+      // Predictive page break: calculate full block height before rendering
+      const blockHeight = calculateBlockHeight(exp, 'experience');
+      checkPageBreak(blockHeight);
 
       // Title and Company
       doc.setFont("helvetica", "bold");
@@ -233,7 +260,7 @@ export function generateResumePDF(data) {
           checkPageBreak(6);
           doc.text("•", MARGIN.left + 2, y);
           const bulletLines = doc.splitTextToSize(h, CONTENT_WIDTH - 8);
-          bulletLines.forEach((line, li) => {
+          bulletLines.forEach((line) => {
             doc.text(line, MARGIN.left + 7, y);
             y += 4;
           });
@@ -248,7 +275,9 @@ export function generateResumePDF(data) {
     sectionHeader("Projects");
 
     data.projects.forEach((proj) => {
-      checkPageBreak(18);
+      // Predictive page break: calculate full block height before rendering
+      const blockHeight = calculateBlockHeight(proj, 'project');
+      checkPageBreak(blockHeight);
 
       doc.setFont("helvetica", "bold");
       doc.setFontSize(10);

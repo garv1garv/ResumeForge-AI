@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import './App.css';
-import { initGemini, generateTailoredResume, enhanceSection } from './utils/gemini';
+import { initGemini, generateTailoredResume, enhanceSection, computeATSScore } from './utils/gemini';
 import { fetchGitHubRepos } from './utils/github';
 import { downloadPDF } from './utils/pdfGenerator';
 import LandingPage from './LandingPage';
@@ -234,6 +234,7 @@ function App() {
   const [theme, setTheme] = useState('dark');
   const [apiKey, setApiKey] = useState('');
   const [githubUsername, setGithubUsername] = useState('');
+  const [githubToken, setGithubToken] = useState('');
   const [githubRepos, setGithubRepos] = useState([]);
   const [githubStatus, setGithubStatus] = useState('');
   const [jobDescription, setJobDescription] = useState('');
@@ -414,7 +415,7 @@ function App() {
     if (!githubUsername.trim()) return;
     setGithubStatus('loading');
     try {
-      const repos = await fetchGitHubRepos(githubUsername.trim());
+      const repos = await fetchGitHubRepos(githubUsername.trim(), githubToken.trim());
       setGithubRepos(repos);
       setGithubStatus('success');
       addToast(`Found ${repos.length} repos from GitHub!`, 'success');
@@ -474,11 +475,23 @@ function App() {
         githubRepos.length > 0 ? githubRepos : []
       );
 
-      if (result.atsScore) {
-        setAtsData(result.atsScore);
-        // Remove atsScore from the data so it doesn't break the PDF structure if unexpected
-        delete result.atsScore;
-      }
+      // Extract Gemini's keyword analysis if present
+      const keywordAnalysis = result.keywordAnalysis || null;
+      delete result.keywordAnalysis;
+
+      // Compute REAL ATS score client-side
+      const realATS = computeATSScore(result, jobDescription);
+
+      // Merge Gemini's keyword analysis with real ATS data
+      setAtsData({
+        score: realATS?.score || 0,
+        totalKeywords: realATS?.totalKeywords || 0,
+        matchedCount: realATS?.matchedCount || 0,
+        matchedKeywords: realATS?.matchedKeywords || [],
+        missingKeywords: realATS?.missingKeywords || [],
+        skillGaps: keywordAnalysis?.skillGaps || [],
+        improvements: keywordAnalysis?.improvements || [],
+      });
 
       setData(result);
       addToast('Tailored resume generated! Review and edit below.', 'success');
@@ -652,6 +665,15 @@ function App() {
               )}
             </div>
             <div className="setup-field">
+              <label>GitHub Token <span style={{ fontWeight: 400, opacity: 0.6 }}>(optional — avoids rate limiting)</span></label>
+              <input
+                type="password"
+                placeholder="ghp_xxxx... (raises limit from 60 to 5,000 req/hr)"
+                value={githubToken}
+                onChange={(e) => setGithubToken(e.target.value)}
+              />
+            </div>
+            <div className="setup-field">
               <label>Quick Info</label>
               <input
                 type="text"
@@ -726,8 +748,8 @@ function App() {
         <div className="ats-panel animate-slide-up">
           <div className="ats-panel-inner">
             <div className="ats-header">
-              <h3><Icons.Sparkles /> ATS Match Analysis</h3>
-              <p>Based on your selected Job Description</p>
+              <h3><Icons.Sparkles /> ATS Keyword Match Analysis</h3>
+              <p>Real keyword matching against your job description — no fabricated scores</p>
             </div>
             <div className="ats-grid">
               <div className="ats-score-card">
@@ -737,30 +759,50 @@ function App() {
                       d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                     />
                     <path className="circle"
-                      strokeDasharray={`${atsData.newScore}, 100`}
+                      strokeDasharray={`${atsData.score}, 100`}
                       d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                     />
-                    <text x="18" y="20.35" className="percentage">{atsData.newScore}%</text>
+                    <text x="18" y="20.35" className="percentage">{atsData.score}%</text>
                   </svg>
                 </div>
                 <div className="ats-score-stats">
-                  <div>Previous Score: <strong>{atsData.originalScore}%</strong></div>
-                  <div className="ats-score-diff">+{atsData.newScore - atsData.originalScore}% Boost</div>
+                  <div>Keywords Matched: <strong>{atsData.matchedCount}/{atsData.totalKeywords}</strong></div>
+                  <div className="ats-score-diff" style={{ color: atsData.score >= 70 ? 'var(--color-success, #22c55e)' : atsData.score >= 40 ? 'var(--color-warning, #f59e0b)' : 'var(--color-error, #ef4444)' }}>
+                    {atsData.score >= 70 ? 'Strong Match' : atsData.score >= 40 ? 'Moderate Match' : 'Needs Improvement'}
+                  </div>
                 </div>
               </div>
               <div className="ats-details">
                 <div className="ats-keywords">
-                  <label>Matched Keywords</label>
+                  <label>✓ Matched Keywords</label>
                   <div className="keyword-tags">
-                    {atsData.matchedKeywords?.map((kw, i) => <span key={i} className="keyword-tag">{kw}</span>)}
+                    {atsData.matchedKeywords?.map((kw, i) => <span key={i} className="keyword-tag matched">{kw}</span>)}
                   </div>
                 </div>
-                <div className="ats-improvements">
-                  <label>Key Improvements</label>
-                  <ul className="ats-improvements-list">
-                    {atsData.improvements?.map((imp, i) => <li key={i}>{imp}</li>)}
-                  </ul>
-                </div>
+                {atsData.missingKeywords?.length > 0 && (
+                  <div className="ats-keywords">
+                    <label>✕ Missing from Resume</label>
+                    <div className="keyword-tags">
+                      {atsData.missingKeywords.map((kw, i) => <span key={i} className="keyword-tag missing">{kw}</span>)}
+                    </div>
+                  </div>
+                )}
+                {atsData.skillGaps?.length > 0 && (
+                  <div className="ats-improvements">
+                    <label>💡 Recommendations</label>
+                    <ul className="ats-improvements-list">
+                      {atsData.skillGaps.map((gap, i) => <li key={i}>{gap}</li>)}
+                    </ul>
+                  </div>
+                )}
+                {atsData.improvements?.length > 0 && (
+                  <div className="ats-improvements">
+                    <label>⚡ Improvements Made</label>
+                    <ul className="ats-improvements-list">
+                      {atsData.improvements.map((imp, i) => <li key={i}>{imp}</li>)}
+                    </ul>
+                  </div>
+                )}
               </div>
             </div>
           </div>
